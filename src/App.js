@@ -1,13 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "animate.css";
 import LandingPage from "./LandingPage";
+import CreateMember from "./pages/CreateMember";
+import MemberProfile from "./pages/MemberProfile";
+import ViewTasks from "./pages/ViewTasks";
+import NotFound from "./pages/NotFound";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Get from localStorage or default to false
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  // Save dark mode preference
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [isDarkMode]);
 
   // --- Handle sign-in ---
   const handleSignIn = (e) => {
@@ -27,11 +47,30 @@ function App() {
   };
 
   // --- Handle logout ---
-  const handleLogout = () => setIsLoggedIn(false);
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+  };
+
+  // --- Toggle dark mode ---
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   // --- Show Landing Page after login ---
   if (isLoggedIn) {
-    return <LandingPage handleLogout={handleLogout} />;
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<LandingPage handleLogout={handleLogout} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} />
+          <Route path="/create-member" element={<CreateMember />} />
+          <Route path="/member/:id" element={<MemberProfile />} />
+          <Route path="/view-tasks" element={<ViewTasks />} />
+          <Route path="/assign-task" element={<LandingPage handleLogout={handleLogout} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    );
   }
 
   // --- Show loading animation ---
@@ -46,17 +85,17 @@ function App() {
 
   // --- Default: Show Sign In Page ---
   return (
-    <div className="login-wrapper">
+    <div className={`login-wrapper ${isDarkMode ? 'dark-mode' : ''}`}>
       {/* Theme Toggle Button */}
       <button
-        onClick={() => {}}
+        onClick={toggleDarkMode}
         style={{
           position: 'fixed',
           top: '2rem',
           right: '2rem',
           zIndex: 1000,
-          background: 'rgba(0, 0, 0, 0.2)',
-          border: '2px solid rgba(255, 255, 255, 0.3)',
+          background: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+          border: `2px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.3)'}`,
           borderRadius: '50%',
           width: '50px',
           height: '50px',
@@ -71,16 +110,16 @@ function App() {
           boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
         }}
         onMouseOver={(e) => {
-          e.target.style.transform = 'scale(1.1)';
+          e.target.style.transform = 'scale(1.1) rotate(15deg)';
           e.target.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.3)';
         }}
         onMouseOut={(e) => {
-          e.target.style.transform = 'scale(1)';
+          e.target.style.transform = 'scale(1) rotate(0deg)';
           e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
         }}
-        title="Theme Toggle"
+        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
       >
-        <i className="fas fa-moon"></i>
+        <i className={`fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
       </button>
       
       {/* Animated Background */}
@@ -97,7 +136,7 @@ function App() {
             <div className="logo-animation">
               <i className="fas fa-tasks animate__animated animate__pulse animate__infinite"></i>
             </div>
-            <h1 className="brand-title animate__animated animate__fadeInDown">Task Scheduler</h1>
+            <h1 className="brand-title animate__animated animate__fadeInDown">Students Chapter CSE Task Manager</h1>
             <p className="brand-subtitle animate__animated animate__fadeIn animate__delay-1s">Organize • Prioritize • Achieve</p>
             <div className="features-list">
               <div className="feature-item">

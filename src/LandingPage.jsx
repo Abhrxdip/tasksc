@@ -1,28 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getMembers } from './data/mockData';
 
-const LandingPage = () => {
+const LandingPage = ({ handleLogout, isDarkMode, toggleDarkMode }) => {
+  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' or 'assign-task'
   
-  // Dummy member data
-  const members = [
-    {
-      id: 1,
-      name: 'Chukrit Da',
-      team: 'Convenor',
-      email: 'abc@aot.edu.in',
-      roll: '69',
-      image: 'https://picsum.photos/200'
-    },
-    {
-      id: 2,
-      name: 'Elon Musk',
-      team: 'Tech',
-      email: 'c@company.com',
-      roll: 'TECH002',
-      image: ''
-    },
-    
-  ];
+  // Get members from shared data
+  const allMembers = getMembers();
+  
+  // Map members to the format expected by the component
+  const members = allMembers.map(m => ({
+    id: m.id,
+    name: m.name,
+    team: m.team,
+    email: m.email,
+    roll: m.rollNumber,
+    image: m.profileImage
+  }));
 
   // Assign Task State
   const [formData, setFormData] = useState({
@@ -48,10 +43,13 @@ const LandingPage = () => {
 
   // Get team options - teams first, then members
   const teamOptions = [
+    { id: 'management-team', name: 'Management Team', type: 'team' },
     { id: 'tech-team', name: 'Tech Team', type: 'team' },
     { id: 'design-team', name: 'Design Team', type: 'team' },
-    { id: 'content-team', name: 'Content Team', type: 'team' },
     { id: 'pr-team', name: 'PR Team', type: 'team' },
+    { id: 'content-team', name: 'Content Team', type: 'team' },
+    { id: 'media-team', name: 'Media Team', type: 'team' },
+    { id: 'support-team', name: 'Support Team', type: 'team' },
     ...members.map(m => ({ id: m.id, name: m.name, type: 'member' }))
   ];
 
@@ -202,36 +200,78 @@ const LandingPage = () => {
       setCurrentView('assign-task');
     } else if (path === '/dashboard' || path === '/') {
       setCurrentView('dashboard');
+      navigate('/dashboard');
     } else {
-      console.log(`Navigating to: ${path}`);
-      alert(`Navigation to: ${path}\n\nIn your actual app, this will use React Router's navigate() function.`);
+      navigate(path);
     }
   };
 
-  const handleLogout = () => {
-    alert('Logged out successfully!');
-    handleNavigation('/login');
+  const handleLogoutClick = () => {
+    if (handleLogout) {
+      handleLogout();
+    } else {
+      navigate('/');
+    }
   };
 
   const getTeamColor = (team) => {
     const colors = {
-      'PR': { bg: '#f3e8ff', text: '#7c3aed' },
+      'Management': { bg: '#fff7ed', text: '#ea580c' },
       'Tech': { bg: '#dbeafe', text: '#2563eb' },
       'Design': { bg: '#fce7f3', text: '#db2777' },
+      'PR': { bg: '#f3e8ff', text: '#7c3aed' },
       'Content': { bg: '#dcfce7', text: '#16a34a' },
-      'Convenor': { bg: '#fff7ed', text: '#ea580c' }
+      'Media': { bg: '#fee2e2', text: '#dc2626' },
+      'Support': { bg: '#e0f2fe', text: '#0284c7' }
     };
     return colors[team] || { bg: '#f3f4f6', text: '#374151' };
   };
 
   return (
-    <div className="animate__animated animate__fadeIn" style={{ 
+    <div className={`animate__animated animate__fadeIn ${isDarkMode ? 'dark-mode' : ''}`} style={{ 
         minHeight: '100vh', 
-        background: 'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)',
+        background: isDarkMode ? 'linear-gradient(120deg, #1a1a2e 0%, #16213e 100%)' : 'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)',
         position: 'relative',
         display: 'flex',
         width: '100%'
       }}>
+      {/* Dark Mode Toggle */}
+      {toggleDarkMode && (
+        <button
+          onClick={toggleDarkMode}
+          style={{
+            position: 'fixed',
+            top: '2rem',
+            right: '2rem',
+            zIndex: 1000,
+            background: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+            border: `2px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.3)'}`,
+            borderRadius: '50%',
+            width: '50px',
+            height: '50px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#667eea',
+            fontSize: '1.5rem',
+            transition: 'all 0.3s ease',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.transform = 'scale(1.1) rotate(15deg)';
+            e.target.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.3)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.transform = 'scale(1) rotate(0deg)';
+            e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+          }}
+          title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          <i className={`fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+        </button>
+      )}
       <div style={{
         position: 'fixed',
         top: '0',
@@ -379,7 +419,7 @@ const LandingPage = () => {
 
         {/* Logout Button */}
         <button
-          onClick={handleLogout}
+          onClick={handleLogoutClick}
           style={{
             padding: '1rem',
             background: 'rgba(255,255,255,0.1)',
