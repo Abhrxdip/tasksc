@@ -397,3 +397,98 @@ body {
   color: #764ba2;
   text-decoration: underline;
 }
+
+/* Dark Mode Styles */
+.login-wrapper.dark-mode .animated-bg {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
+
+.login-wrapper.dark-mode .circle {
+  background: rgba(102, 126, 234, 0.15);
+}
+
+.login-wrapper.dark-mode .login-container {
+  background: rgba(26, 26, 46, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-wrapper.dark-mode .branding-side {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-wrapper.dark-mode .form-side {
+  background: rgba(26, 26, 46, 0.98);
+}
+
+.login-wrapper.dark-mode .form-header h2 {
+  color: #ffffff;
+}
+
+.login-wrapper.dark-mode .form-header p {
+  color: #b4b4b4;
+}
+
+.login-wrapper.dark-mode .input-group input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.login-wrapper.dark-mode .input-group input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #667eea;
+}
+
+.login-wrapper.dark-mode .input-group input::placeholder {
+  color: #888888;
+}
+
+.login-wrapper.dark-mode .forgot-password-link,
+.login-wrapper.dark-mode .update-password-link {
+  color: #9d8df1;
+}
+
+.login-wrapper.dark-mode .forgot-password-link:hover,
+.login-wrapper.dark-mode .update-password-link:hover {
+  color: #b8a9f5;
+}
+
+.login-wrapper.dark-mode .demo-credentials {
+  color: #b4b4b4;
+}
+
+.login-wrapper.dark-mode .brand-title {
+  color: #ffffff;
+}
+
+.login-wrapper.dark-mode .brand-subtitle {
+  color: #b4b4b4;
+}
+
+.login-wrapper.dark-mode .feature-item span {
+  color: #e0e0e0;
+}
+
+/* Assign Task Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

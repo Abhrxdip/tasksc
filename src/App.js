@@ -47,6 +47,42 @@ function App() {
   // --- Default: Show Sign In Page ---
   return (
     <div className="login-wrapper">
+      {/* Theme Toggle Button */}
+      <button
+        onClick={() => {}}
+        style={{
+          position: 'fixed',
+          top: '2rem',
+          right: '2rem',
+          zIndex: 1000,
+          background: 'rgba(0, 0, 0, 0.2)',
+          border: '2px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '50%',
+          width: '50px',
+          height: '50px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#667eea',
+          fontSize: '1.5rem',
+          transition: 'all 0.3s ease',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
+        }}
+        onMouseOver={(e) => {
+          e.target.style.transform = 'scale(1.1)';
+          e.target.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.3)';
+        }}
+        onMouseOut={(e) => {
+          e.target.style.transform = 'scale(1)';
+          e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+        }}
+        title="Theme Toggle"
+      >
+        <i className="fas fa-moon"></i>
+      </button>
+      
       {/* Animated Background */}
       <div className="animated-bg">
         <div className="circle circle-1"></div>

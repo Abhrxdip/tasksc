@@ -29,7 +29,6 @@ const LandingPage = () => {
     taskName: '',
     description: '',
     assignedTo: [],
-    category: '',
     priority: '',
     deadline: '',
     attachments: null
@@ -38,27 +37,9 @@ const LandingPage = () => {
   const [errors, setErrors] = useState({});
   const [daysRemaining, setDaysRemaining] = useState(null);
   const [showToast, setShowToast] = useState(false);
+  const [assignDropdownOpen, setAssignDropdownOpen] = useState(false);
+  const [assignSearchTerm, setAssignSearchTerm] = useState('');
 
-  const taskTemplates = [
-    {
-      name: 'Prepare weekly meeting report',
-      description: 'Compile all team updates, metrics, and action items for the weekly sync meeting.',
-      category: 'Content',
-      priority: 'Medium'
-    },
-    {
-      name: 'Design event poster',
-      description: 'Create an eye-catching poster for the upcoming company event with brand guidelines.',
-      category: 'Design',
-      priority: 'High'
-    },
-    {
-      name: 'Fix website bugs',
-      description: 'Review bug reports from last sprint and prioritize critical fixes for the website.',
-      category: 'Tech',
-      priority: 'High'
-    }
-  ];
 
   const priorityConfig = {
     Low: { color: '#16a34a', bg: '#dcfce7', border: '#86efac' },
@@ -66,13 +47,13 @@ const LandingPage = () => {
     High: { color: '#ea580c', bg: '#ffedd5', border: '#fdba74' }
   };
 
-  // Get team options from members
+  // Get team options - teams first, then members
   const teamOptions = [
-    ...members.map(m => ({ id: m.id, name: m.name, type: 'member' })),
     { id: 'tech-team', name: 'Tech Team', type: 'team' },
     { id: 'design-team', name: 'Design Team', type: 'team' },
     { id: 'content-team', name: 'Content Team', type: 'team' },
-    { id: 'pr-team', name: 'PR Team', type: 'team' }
+    { id: 'pr-team', name: 'PR Team', type: 'team' },
+    ...members.map(m => ({ id: m.id, name: m.name, type: 'member' }))
   ];
 
   useEffect(() => {
@@ -80,6 +61,17 @@ const LandingPage = () => {
       calculateDaysRemaining(formData.deadline);
     }
   }, [formData.deadline]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (assignDropdownOpen && !event.target.closest('[data-assign-dropdown]')) {
+        setAssignDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [assignDropdownOpen]);
 
   const calculateDaysRemaining = (deadline) => {
     const today = new Date();
@@ -107,23 +99,33 @@ const LandingPage = () => {
     }
   };
 
+  const toggleAssignee = (name) => {
+    setFormData(prev => {
+      const newAssignedTo = prev.assignedTo.includes(name)
+        ? prev.assignedTo.filter(item => item !== name)
+        : [...prev.assignedTo, name];
+      return { ...prev, assignedTo: newAssignedTo };
+    });
+    if (errors.assignedTo) {
+      setErrors(prev => ({ ...prev, assignedTo: '' }));
+    }
+  };
+
+  const removeAssignee = (name) => {
+    setFormData(prev => ({
+      ...prev,
+      assignedTo: prev.assignedTo.filter(item => item !== name)
+    }));
+  };
+
+  const filteredTeamOptions = teamOptions.filter(option =>
+    option.name.toLowerCase().includes(assignSearchTerm.toLowerCase())
+  );
+
   const handleFileChange = (e) => {
     setFormData(prev => ({ ...prev, attachments: e.target.files[0] }));
   };
 
-  const handleTemplateSelect = (e) => {
-    const templateIndex = e.target.value;
-    if (templateIndex !== '') {
-      const template = taskTemplates[templateIndex];
-      setFormData(prev => ({
-        ...prev,
-        taskName: template.name,
-        description: template.description,
-        category: template.category,
-        priority: template.priority
-      }));
-    }
-  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -161,7 +163,6 @@ const LandingPage = () => {
       taskName: formData.taskName,
       description: formData.description,
       assignedTo: formData.assignedTo,
-      category: formData.category || 'Other',
       priority: formData.priority || 'Medium',
       deadline: formData.deadline,
       attachments: formData.attachments?.name || null,
@@ -179,7 +180,6 @@ const LandingPage = () => {
       taskName: '',
       description: '',
       assignedTo: [],
-      category: '',
       priority: '',
       deadline: '',
       attachments: null
@@ -436,15 +436,20 @@ const LandingPage = () => {
           formData={formData}
           errors={errors}
           daysRemaining={daysRemaining}
-          taskTemplates={taskTemplates}
           teamOptions={teamOptions}
           priorityConfig={priorityConfig}
           handleInputChange={handleInputChange}
           handleMultiSelect={handleMultiSelect}
           handleFileChange={handleFileChange}
-          handleTemplateSelect={handleTemplateSelect}
           handleSubmit={handleSubmit}
           getDeadlineMessage={getDeadlineMessage}
+          assignDropdownOpen={assignDropdownOpen}
+          setAssignDropdownOpen={setAssignDropdownOpen}
+          assignSearchTerm={assignSearchTerm}
+          setAssignSearchTerm={setAssignSearchTerm}
+          toggleAssignee={toggleAssignee}
+          removeAssignee={removeAssignee}
+          filteredTeamOptions={filteredTeamOptions}
         />
       ) : (
         <div style={{ width: '100%' }}>
@@ -941,13 +946,11 @@ const AssignTaskView = ({
   formData,
   errors,
   daysRemaining,
-  taskTemplates,
   teamOptions,
   priorityConfig,
   handleInputChange,
   handleMultiSelect,
   handleFileChange,
-  handleTemplateSelect,
   handleSubmit,
   getDeadlineMessage
 }) => {
@@ -988,40 +991,6 @@ const AssignTaskView = ({
           border: '1px solid rgba(102, 126, 234, 0.2)'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Template Selector */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                color: '#667eea',
-                marginBottom: '0.75rem'
-              }}>
-                <i className="fas fa-magic" style={{ marginRight: '0.5rem' }}></i>
-                Quick Template (Optional)
-              </label>
-              <select
-                onChange={handleTemplateSelect}
-                style={{
-                  width: '100%',
-                  padding: '0.875rem 1rem',
-                  background: 'rgba(102, 126, 234, 0.05)',
-                  border: '1px solid rgba(102, 126, 234, 0.2)',
-                  borderRadius: '0.75rem',
-                  fontSize: '0.9375rem',
-                  color: '#2c3e50',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="">Select a template...</option>
-                {taskTemplates.map((template, idx) => (
-                  <option key={idx} value={idx}>{template.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ borderTop: '1px solid rgba(102, 126, 234, 0.2)', paddingTop: '1.5rem' }}></div>
-
             {/* Task Name */}
             <div>
               <label style={{
@@ -1095,99 +1064,439 @@ const AssignTaskView = ({
               />
             </div>
 
-            {/* Two-column layout */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '1.5rem'
-            }}>
-              {/* Assign To */}
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '0.875rem',
-                  fontWeight: '700',
-                  color: '#667eea',
-                  marginBottom: '0.75rem'
+            {/* Assign To - Beautiful Custom Select */}
+            <div style={{ position: 'relative' }} data-assign-dropdown>
+              <label style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '700',
+                color: '#667eea',
+                marginBottom: '0.75rem'
+              }}>
+                <i className="fas fa-users" style={{ marginRight: '0.5rem' }}></i>
+                Assign To <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+
+              {/* Selected Assignees Display */}
+              {formData.assignedTo.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem',
+                  padding: '0.75rem',
+                  background: 'rgba(102, 126, 234, 0.05)',
+                  borderRadius: '0.75rem',
+                  border: '1px solid rgba(102, 126, 234, 0.1)',
+                  minHeight: '60px'
                 }}>
-                  <i className="fas fa-users" style={{ marginRight: '0.5rem' }}></i>
-                  Assign To <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <select
-                  multiple
-                  value={formData.assignedTo}
-                  onChange={handleMultiSelect}
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem 1rem',
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    border: `1px solid ${errors.assignedTo ? '#ef4444' : 'rgba(102, 126, 234, 0.2)'}`,
-                    borderRadius: '0.75rem',
-                    fontSize: '0.9375rem',
-                    color: '#2c3e50',
-                    minHeight: '120px',
-                    cursor: 'pointer'
+                  {formData.assignedTo.map((name) => {
+                    const option = teamOptions.find(opt => opt.name === name);
+                    const isTeam = option?.type === 'team';
+                    return (
+                      <div
+                        key={name}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: isTeam 
+                            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                            : 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
+                          color: 'white',
+                          borderRadius: '1.5rem',
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                          animation: 'slideIn 0.3s ease-out'
+                        }}
+                      >
+                        <i className={`fas ${isTeam ? 'fa-users' : 'fa-user'}`} style={{ fontSize: '0.75rem' }}></i>
+                        <span>{name}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeAssignee(name);
+                          }}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.3)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'white',
+                            fontSize: '0.75rem',
+                            padding: 0,
+                            marginLeft: '0.25rem',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseOver={(e) => {
+                            e.target.style.background = 'rgba(255, 255, 255, 0.5)';
+                            e.target.style.transform = 'scale(1.1)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                            e.target.style.transform = 'scale(1)';
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Custom Dropdown Trigger */}
+              <div
+                onClick={() => setAssignDropdownOpen(!assignDropdownOpen)}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  background: errors.assignedTo 
+                    ? 'rgba(255, 255, 255, 0.95)' 
+                    : 'rgba(255, 255, 255, 0.9)',
+                  border: `2px solid ${errors.assignedTo ? '#ef4444' : assignDropdownOpen ? '#667eea' : 'rgba(102, 126, 234, 0.2)'}`,
+                  borderRadius: '0.75rem',
+                  fontSize: '0.9375rem',
+                  color: formData.assignedTo.length === 0 ? '#94a3b8' : '#2c3e50',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.3s ease',
+                  boxShadow: assignDropdownOpen ? '0 4px 12px rgba(102, 126, 234, 0.2)' : 'none'
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <i className="fas fa-search" style={{ color: '#667eea' }}></i>
+                  {formData.assignedTo.length === 0 ? 'Search and select teams or members...' : `${formData.assignedTo.length} selected`}
+                </span>
+                <i 
+                  className={`fas fa-chevron-${assignDropdownOpen ? 'up' : 'down'}`}
+                  style={{ 
+                    color: '#667eea',
+                    transition: 'transform 0.3s ease',
+                    transform: assignDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
                   }}
-                >
-                  {teamOptions.map(option => (
-                    <option key={option.id} value={option.name}>
-                      {option.type === 'team' ? '👥' : '👤'} {option.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.assignedTo && (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    color: '#ef4444',
-                    fontSize: '0.875rem',
-                    marginTop: '0.5rem'
-                  }}>
-                    <i className="fas fa-exclamation-circle"></i>
-                    {errors.assignedTo}
-                  </div>
-                )}
-                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
-                  Hold Ctrl/Cmd to select multiple
-                </p>
+                ></i>
               </div>
 
-              {/* Category */}
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '0.875rem',
-                  fontWeight: '700',
-                  color: '#667eea',
-                  marginBottom: '0.75rem'
+              {/* Custom Dropdown Menu */}
+              {assignDropdownOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  marginTop: '0.5rem',
+                  background: 'white',
+                  border: '2px solid rgba(102, 126, 234, 0.2)',
+                  borderRadius: '0.75rem',
+                  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+                  zIndex: 1000,
+                  maxHeight: '300px',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  animation: 'slideDown 0.3s ease-out'
                 }}>
-                  <i className="fas fa-tag" style={{ marginRight: '0.5rem' }}></i>
-                  Category
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem 1rem',
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    border: '1px solid rgba(102, 126, 234, 0.2)',
-                    borderRadius: '0.75rem',
-                    fontSize: '0.9375rem',
-                    color: '#2c3e50',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="">Select category...</option>
-                  <option value="Tech">Tech</option>
-                  <option value="PR">PR</option>
-                  <option value="Design">Design</option>
-                  <option value="Content">Content</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+                  {/* Search Input */}
+                  <div style={{
+                    padding: '0.75rem',
+                    borderBottom: '1px solid rgba(102, 126, 234, 0.1)',
+                    background: 'rgba(102, 126, 234, 0.02)',
+                    position: 'relative'
+                  }}>
+                    <input
+                      type="text"
+                      placeholder="Search teams or members..."
+                      value={assignSearchTerm}
+                      onChange={(e) => setAssignSearchTerm(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem 0.75rem 2.5rem',
+                        border: '1px solid rgba(102, 126, 234, 0.2)',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.875rem',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    />
+                    <i className="fas fa-search" style={{
+                      position: 'absolute',
+                      left: '1.5rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#667eea',
+                      fontSize: '0.875rem',
+                      pointerEvents: 'none'
+                    }}></i>
+                  </div>
+
+                  {/* Options List */}
+                  <div style={{
+                    maxHeight: '240px',
+                    overflowY: 'auto',
+                    padding: '0.5rem'
+                  }}>
+                    {filteredTeamOptions.length === 0 ? (
+                      <div style={{
+                        padding: '2rem',
+                        textAlign: 'center',
+                        color: '#94a3b8'
+                      }}>
+                        <i className="fas fa-search" style={{ fontSize: '2rem', marginBottom: '0.5rem', opacity: 0.5 }}></i>
+                        <p style={{ fontSize: '0.875rem' }}>No results found</p>
+                      </div>
+                    ) : (
+                      (() => {
+                        const teams = filteredTeamOptions.filter(opt => opt.type === 'team');
+                        const members = filteredTeamOptions.filter(opt => opt.type === 'member');
+                        
+                        return (
+                          <>
+                            {teams.length > 0 && (
+                              <>
+                                <div style={{
+                                  padding: '0.5rem 0.75rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '700',
+                                  color: '#667eea',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px',
+                                  background: 'rgba(102, 126, 234, 0.05)'
+                                }}>
+                                  Teams
+                                </div>
+                                {teams.map((option) => {
+                                  const isSelected = formData.assignedTo.includes(option.name);
+                                  const isTeam = option.type === 'team';
+                                  
+                                  return (
+                                    <div key={option.id}>
+                                      {/* Option Item */}
+                                      <div
+                                        onClick={() => toggleAssignee(option.name)}
+                                        style={{
+                                          padding: '0.875rem 1rem',
+                                          borderRadius: '0.5rem',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '0.75rem',
+                                          background: isSelected 
+                                            ? 'rgba(102, 126, 234, 0.1)' 
+                                            : 'transparent',
+                                          transition: 'all 0.2s ease',
+                                          marginBottom: '0.25rem'
+                                        }}
+                                        onMouseOver={(e) => {
+                                          if (!isSelected) {
+                                            e.currentTarget.style.background = 'rgba(102, 126, 234, 0.05)';
+                                          }
+                                        }}
+                                        onMouseOut={(e) => {
+                                          if (!isSelected) {
+                                            e.currentTarget.style.background = 'transparent';
+                                          }
+                                        }}
+                                      >
+                                        {/* Icon */}
+                                        <div style={{
+                                          width: '36px',
+                                          height: '36px',
+                                          borderRadius: '50%',
+                                          background: isTeam 
+                                            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                                            : 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          color: 'white',
+                                          fontSize: '0.875rem',
+                                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                                          flexShrink: 0
+                                        }}>
+                                          <i className={`fas ${isTeam ? 'fa-users' : 'fa-user'}`}></i>
+                                        </div>
+
+                                        {/* Name */}
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{
+                                            fontWeight: '600',
+                                            color: '#2c3e50',
+                                            fontSize: '0.9375rem'
+                                          }}>
+                                            {option.name}
+                                          </div>
+                                          <div style={{
+                                            fontSize: '0.75rem',
+                                            color: '#94a3b8',
+                                            marginTop: '0.125rem'
+                                          }}>
+                                            {isTeam ? 'Team' : 'Individual Member'}
+                                          </div>
+                                        </div>
+
+                                        {/* Checkbox Indicator */}
+                                        <div style={{
+                                          width: '24px',
+                                          height: '24px',
+                                          borderRadius: '0.375rem',
+                                          border: `2px solid ${isSelected ? '#667eea' : '#cbd5e1'}`,
+                                          background: isSelected ? '#667eea' : 'white',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          transition: 'all 0.2s ease',
+                                          flexShrink: 0
+                                        }}>
+                                          {isSelected && (
+                                            <i className="fas fa-check" style={{ color: 'white', fontSize: '0.75rem' }}></i>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </>
+                            )}
+                            
+                            {members.length > 0 && (
+                              <>
+                                <div style={{
+                                  padding: '0.5rem 0.75rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '700',
+                                  color: '#667eea',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px',
+                                  background: 'rgba(102, 126, 234, 0.05)',
+                                  marginTop: teams.length > 0 ? '0.5rem' : '0'
+                                }}>
+                                  Members
+                                </div>
+                                {members.map((option) => {
+                                  const isSelected = formData.assignedTo.includes(option.name);
+                                  const isTeam = option.type === 'team';
+                                  
+                                  return (
+                                    <div key={option.id}>
+                                      {/* Option Item */}
+                                      <div
+                                        onClick={() => toggleAssignee(option.name)}
+                                        style={{
+                                          padding: '0.875rem 1rem',
+                                          borderRadius: '0.5rem',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '0.75rem',
+                                          background: isSelected 
+                                            ? 'rgba(102, 126, 234, 0.1)' 
+                                            : 'transparent',
+                                          transition: 'all 0.2s ease',
+                                          marginBottom: '0.25rem'
+                                        }}
+                                        onMouseOver={(e) => {
+                                          if (!isSelected) {
+                                            e.currentTarget.style.background = 'rgba(102, 126, 234, 0.05)';
+                                          }
+                                        }}
+                                        onMouseOut={(e) => {
+                                          if (!isSelected) {
+                                            e.currentTarget.style.background = 'transparent';
+                                          }
+                                        }}
+                                      >
+                                        {/* Icon */}
+                                        <div style={{
+                                          width: '36px',
+                                          height: '36px',
+                                          borderRadius: '50%',
+                                          background: isTeam 
+                                            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                                            : 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          color: 'white',
+                                          fontSize: '0.875rem',
+                                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                                          flexShrink: 0
+                                        }}>
+                                          <i className={`fas ${isTeam ? 'fa-users' : 'fa-user'}`}></i>
+                                        </div>
+
+                                        {/* Name */}
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{
+                                            fontWeight: '600',
+                                            color: '#2c3e50',
+                                            fontSize: '0.9375rem'
+                                          }}>
+                                            {option.name}
+                                          </div>
+                                          <div style={{
+                                            fontSize: '0.75rem',
+                                            color: '#94a3b8',
+                                            marginTop: '0.125rem'
+                                          }}>
+                                            {isTeam ? 'Team' : 'Individual Member'}
+                                          </div>
+                                        </div>
+
+                                        {/* Checkbox Indicator */}
+                                        <div style={{
+                                          width: '24px',
+                                          height: '24px',
+                                          borderRadius: '0.375rem',
+                                          border: `2px solid ${isSelected ? '#667eea' : '#cbd5e1'}`,
+                                          background: isSelected ? '#667eea' : 'white',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          transition: 'all 0.2s ease',
+                                          flexShrink: 0
+                                        }}>
+                                          {isSelected && (
+                                            <i className="fas fa-check" style={{ color: 'white', fontSize: '0.75rem' }}></i>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </>
+                            )}
+                          </>
+                        );
+                      })()
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {errors.assignedTo && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  color: '#ef4444',
+                  fontSize: '0.875rem',
+                  marginTop: '0.5rem'
+                }}>
+                  <i className="fas fa-exclamation-circle"></i>
+                  {errors.assignedTo}
+                </div>
+              )}
             </div>
 
             {/* Priority and Deadline */}
@@ -1422,31 +1731,6 @@ const AssignTaskView = ({
                     </span>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {formData.category && (
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(102, 126, 234, 0.05)',
-                borderRadius: '0.75rem',
-                border: '1px solid rgba(102, 126, 234, 0.1)'
-              }}>
-                <p style={{ fontSize: '0.75rem', color: '#667eea', fontWeight: '700', marginBottom: '0.5rem' }}>
-                  <i className="fas fa-tag" style={{ marginRight: '0.5rem' }}></i>
-                  CATEGORY
-                </p>
-                <span style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '2rem',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  display: 'inline-block'
-                }}>
-                  {formData.category}
-                </span>
               </div>
             )}
 
