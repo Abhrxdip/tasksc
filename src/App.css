@@ -1,8 +1,7 @@
-/* Import clean sans-serif typeface */
+
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Poppins:wght@400;600;700&display=swap");
 @import 'animate.css';
 
-/* --- Reset & Base --- */
 * {
   margin: 0;
   padding: 0;
@@ -14,7 +13,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ========== LOGIN WRAPPER ========== */
 .login-wrapper {
   min-height: 100vh;
   display: flex;
@@ -24,7 +22,6 @@ body {
   overflow: hidden;
 }
 
-/* ========== ANIMATED BACKGROUND ========== */
 .animated-bg {
   position: absolute;
   top: 0;
@@ -78,7 +75,6 @@ body {
   }
 }
 
-/* ========== LOGIN CONTAINER ========== */
 .login-container {
   display: flex;
   width: 90%;
@@ -103,7 +99,6 @@ body {
   }
 }
 
-/* ========== BRANDING SIDE (LEFT) ========== */
 .branding-side {
   flex: 1;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -221,7 +216,6 @@ body {
   font-size: 16px;
 }
 
-/* ========== FORM SIDE (RIGHT) ========== */
 .form-side {
   flex: 1;
   padding: 60px 50px;
@@ -262,7 +256,6 @@ body {
   font-size: 16px;
 }
 
-/* ========== FORM INPUTS ========== */
 .signin-form {
   animation: fadeInRight 0.8s ease-out 0.2s backwards;
 }
@@ -297,7 +290,6 @@ body {
   background: white;
 }
 
-/* Enhanced Sign In Button Styles */
 .signin-button {
   width: 100%;
   padding: 16px;
@@ -353,7 +345,6 @@ body {
   transform: translateX(3px);
 }
 
-/* Add a subtle shine effect */
 .signin-button::after {
   content: '';
   position: absolute;
