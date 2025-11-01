@@ -100,10 +100,12 @@ function App() {
               </div>
               
               <div className="form-options">
-                <label className="remember-checkbox">
-                  <input type="checkbox" id="remember" />
-                  <span>Remember me</span>
-                </label>
+                <a href="#" className="forgot-password-link" onClick={(e) => { e.preventDefault(); alert('Forgot password functionality - In a real app, this would reset your password'); }}>
+                  Forgot password?
+                </a>
+                <a href="#" className="update-password-link" onClick={(e) => { e.preventDefault(); alert('Update password functionality - In a real app, this would allow you to change your password'); }}>
+                  Update password
+                </a>
               </div>
               
               <button type="submit" className="signin-button">

@@ -374,3 +374,26 @@ body {
     transform: translateX(100%) rotate(45deg);
   }
 }
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  margin-top: -10px;
+}
+
+.forgot-password-link,
+.update-password-link {
+  color: #667eea;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.forgot-password-link:hover,
+.update-password-link:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
