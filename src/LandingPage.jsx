@@ -30,8 +30,7 @@ const LandingPage = () => {
     description: '',
     assignedTo: [],
     priority: '',
-    deadline: '',
-    attachments: null
+    deadline: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -56,6 +55,16 @@ const LandingPage = () => {
     ...members.map(m => ({ id: m.id, name: m.name, type: 'member' }))
   ];
 
+  const calculateDaysRemaining = (deadline) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const deadlineDate = new Date(deadline);
+    deadlineDate.setHours(0, 0, 0, 0);
+    const diffTime = deadlineDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    setDaysRemaining(diffDays);
+  };
+
   useEffect(() => {
     if (formData.deadline) {
       calculateDaysRemaining(formData.deadline);
@@ -72,16 +81,6 @@ const LandingPage = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [assignDropdownOpen]);
-
-  const calculateDaysRemaining = (deadline) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const deadlineDate = new Date(deadline);
-    deadlineDate.setHours(0, 0, 0, 0);
-    const diffTime = deadlineDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    setDaysRemaining(diffDays);
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -122,9 +121,6 @@ const LandingPage = () => {
     option.name.toLowerCase().includes(assignSearchTerm.toLowerCase())
   );
 
-  const handleFileChange = (e) => {
-    setFormData(prev => ({ ...prev, attachments: e.target.files[0] }));
-  };
 
 
   const validateForm = () => {
@@ -165,7 +161,6 @@ const LandingPage = () => {
       assignedTo: formData.assignedTo,
       priority: formData.priority || 'Medium',
       deadline: formData.deadline,
-      attachments: formData.attachments?.name || null,
       createdAt: new Date().toISOString()
     };
 
@@ -181,8 +176,7 @@ const LandingPage = () => {
       description: '',
       assignedTo: [],
       priority: '',
-      deadline: '',
-      attachments: null
+      deadline: ''
     });
     setDaysRemaining(null);
   };
@@ -440,7 +434,6 @@ const LandingPage = () => {
           priorityConfig={priorityConfig}
           handleInputChange={handleInputChange}
           handleMultiSelect={handleMultiSelect}
-          handleFileChange={handleFileChange}
           handleSubmit={handleSubmit}
           getDeadlineMessage={getDeadlineMessage}
           assignDropdownOpen={assignDropdownOpen}
@@ -809,24 +802,9 @@ const LandingPage = () => {
                       fontSize: '0.9375rem',
                       color: '#34495e',
                       fontFamily: '"Monaco", "Courier New", monospace',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem'
+                      fontWeight: '600'
                     }}>
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '0.375rem',
-                        backgroundColor: 'rgba(108, 117, 125, 0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#6c757d'
-                      }}>
-                        <i className="fas fa-hashtag" style={{ fontSize: '0.75rem' }}></i>
-                      </div>
-                      <span>{member.roll}</span>
+                      {member.roll}
                     </div>
 
                     {/* Actions */}
@@ -950,9 +928,15 @@ const AssignTaskView = ({
   priorityConfig,
   handleInputChange,
   handleMultiSelect,
-  handleFileChange,
   handleSubmit,
-  getDeadlineMessage
+  getDeadlineMessage,
+  assignDropdownOpen,
+  setAssignDropdownOpen,
+  assignSearchTerm,
+  setAssignSearchTerm,
+  toggleAssignee,
+  removeAssignee,
+  filteredTeamOptions
 }) => {
   return (
     <div style={{ width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
@@ -1607,32 +1591,6 @@ const AssignTaskView = ({
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Attachments */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '700',
-                color: '#667eea',
-                marginBottom: '0.75rem'
-              }}>
-                Attachments (Optional)
-              </label>
-              <input
-                type="file"
-                onChange={handleFileChange}
-                style={{
-                  width: '100%',
-                  padding: '0.875rem 1rem',
-                  background: 'rgba(255, 255, 255, 0.9)',
-                  border: '1px solid rgba(102, 126, 234, 0.2)',
-                  borderRadius: '0.75rem',
-                  fontSize: '0.9375rem',
-                  color: '#2c3e50'
-                }}
-              />
             </div>
 
             {/* Submit Button */}

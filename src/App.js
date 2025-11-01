@@ -136,12 +136,12 @@ function App() {
               </div>
               
               <div className="form-options">
-                <a href="#" className="forgot-password-link" onClick={(e) => { e.preventDefault(); alert('Forgot password functionality - In a real app, this would reset your password'); }}>
+                <button type="button" className="forgot-password-link" onClick={(e) => { e.preventDefault(); alert('Forgot password functionality - In a real app, this would reset your password'); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                   Forgot password?
-                </a>
-                <a href="#" className="update-password-link" onClick={(e) => { e.preventDefault(); alert('Update password functionality - In a real app, this would allow you to change your password'); }}>
+                </button>
+                <button type="button" className="update-password-link" onClick={(e) => { e.preventDefault(); alert('Update password functionality - In a real app, this would allow you to change your password'); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                   Update password
-                </a>
+                </button>
               </div>
               
               <button type="submit" className="signin-button">
